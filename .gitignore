@@ -6,3 +6,5 @@ Hardware/Micorphone/Micorphone-backups/
 Hardware/UNO_Q_Breakout/UNO_Q_Breakout-backups/UNO_Q_Breakout-2026-02-27_180306.zip
 
 Hardware/UNO_Q_Breakout/UNO_Q_Breakout-backups/
+
+*.lck
