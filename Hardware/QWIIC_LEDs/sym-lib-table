@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "SparkFun-Qwiic")(type "KiCad")(uri "${KIPRJMOD}/SparkFun-Qwiic.kicad_sym")(options "")(descr ""))
+)

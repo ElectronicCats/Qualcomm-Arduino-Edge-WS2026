@@ -1925,17 +1925,15 @@
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x06")
-		(at 40.64 58.42 0)
-		(mirror y)
+		(at 40.64 60.96 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "ae80bdfb-a33a-4099-be3d-8868132228ff")
 		(property "Reference" "J1"
-			(at 40.64 46.99 0)
+			(at 40.64 72.39 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1943,7 +1941,7 @@
 			)
 		)
 		(property "Value" "LAMP1"
-			(at 40.64 49.53 0)
+			(at 40.64 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1951,7 +1949,7 @@
 			)
 		)
 		(property "Footprint" "Connector_FFC-FPC:TE_84952-6_1x06-1MP_P1.0mm_Horizontal"
-			(at 40.64 58.42 0)
+			(at 40.64 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1960,7 +1958,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 40.64 58.42 0)
+			(at 40.64 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1969,7 +1967,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 40.64 58.42 0)
+			(at 40.64 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1977,7 +1975,7 @@
 			)
 		)
 		(property "manf#" "0522070633"
-			(at 40.64 58.42 0)
+			(at 40.64 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
