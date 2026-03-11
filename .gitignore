@@ -10,3 +10,9 @@ Hardware/UNO_Q_Breakout/UNO_Q_Breakout-backups/
 *.lck
 
 Hardware/QWIIC_LEDs/QWIIC_LEDs-backups/
+
+*.gbr
+
+*.drl
+
+*.gbrjob
