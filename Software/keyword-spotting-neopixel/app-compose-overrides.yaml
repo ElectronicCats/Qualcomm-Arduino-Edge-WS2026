@@ -1,0 +1,10 @@
+# app-compose-overrides.yaml — Arduino UNO Q analog microphone support
+services:
+  main:
+    devices:
+      - /dev/snd
+    volumes:
+      - type: bind
+        source: /etc/asound.conf
+        target: /etc/asound.conf
+        read_only: true

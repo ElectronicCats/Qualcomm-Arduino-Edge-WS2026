@@ -1,0 +1,6 @@
+name: Hey Arduino! NeoPixel
+icon: 💡
+description: When "Hey Arduino!" keyword is detected by the microphone, a NeoPixel strip (via Adafruit NeoDriver I2C, address 0x60) animates green.
+
+bricks:
+  - arduino:keyword_spotting
