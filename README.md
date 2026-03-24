@@ -1,6 +1,6 @@
 # UNO Q EchoGlow Workshop
 
-<img src="assets/docs_assets/EchoGlow.jpeg" alt="drawing" width="250" height="200"/>
+<img src="Software/uno-q-echoglow/assets/docs_assets/EchoGlow.jpeg" alt="drawing" width="250" height="200"/>
 
 
 The UNO Q EchoGlow is an AI-powered desktop light controlled by voice commands. It detects the keywords "Warmer-light", "Cooler-light", "Dimmer", and "Brighter" through an analog microphone connected directly to the Arduino UNO Q, and controls a NeoPixel strip connected via the onboard Qwiic port. These commands are trained on Edge Impulse’s platform and uploaded to the Arduino UNO Q inside the EchoGlow.
