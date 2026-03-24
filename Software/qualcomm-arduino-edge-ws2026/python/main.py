@@ -5,11 +5,10 @@
 from arduino.app_utils import *
 from arduino.app_bricks.keyword_spotting import KeywordSpotting
 
-def on_keyword_detected():
-    """Callback function that handles a detected keyword."""
-    Bridge.call("keyword_detected")
-
 spotter = KeywordSpotting()
-spotter.on_detect("hey_arduino", on_keyword_detected)
+spotter.on_detect("Warmer-light", lambda: Bridge.call("warmer_light"))
+spotter.on_detect("Cooler-light", lambda: Bridge.call("cooler_light"))
+spotter.on_detect("Dimmer", lambda: Bridge.call("dimmer"))
+spotter.on_detect("Brighter", lambda: Bridge.call("brighter"))
 
 App.run()
