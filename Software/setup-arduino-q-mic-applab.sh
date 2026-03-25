@@ -346,8 +346,8 @@ deploy_example() {
     return
   fi
 
-  mkdir -p "${examples_dir}"
-  cp -r "${src}" "${dest}"
+  mkdir -p "${dest}"
+  cp -r "${src}/." "${dest}"
   chown -R arduino:arduino "${dest}"
   ok "Example deployed to ${dest}"
   ok "Step 4 complete."
