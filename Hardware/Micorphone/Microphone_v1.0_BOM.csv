@@ -1,6 +1,0 @@
-"Reference","Value","Footprint","Datasheet","Qty","manf#","DNP","Exclude from BOM","Exclude from Board"
-"C1,C2","2.2uF","Capacitor_SMD:C_0603_1608Metric","","2","0603X225K6R3CT","","",""
-"C3","0.1uF","Capacitor_SMD:C_0603_1608Metric","","1","TMK107BJ104KA-T","","",""
-"J1","LAMP1","Connector_FFC-FPC:TE_84952-6_1x06-1MP_P1.0mm_Horizontal","~","1","84952-6","","",""
-"R1,R2","2K","Resistor_SMD:R_0603_1608Metric","","2","-","DNP","",""
-"U1","ICS-40618","microphone:MIC_ICS-40618","","1","ICS-40638","","",""
