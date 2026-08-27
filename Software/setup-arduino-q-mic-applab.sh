@@ -24,7 +24,8 @@
 #      requires a USB-like ALSA device under /dev/snd/by-id/usb-* for apps
 #      that use the keyword_spotting brick, so we expose the analog codec
 #      under a fake usb-* symlink. Persisted via udev rule.
-#   3. Deploy UNO Q EchoGlow example to the arduino-app-cli examples dir.
+#   3. Deploy UNO Q EchoGlow example to the arduino-app-cli examples dir,
+#      under inspirational/platform_unoq/ (App Lab 0.10+ category layout).
 #   4. Patch arduino:zephyr 0.55.0 gpio_lowlevel_stm32.h regression that
 #      breaks Adafruit_BusIO 1.16.1 (macro takes a pin instead of a port).
 #
@@ -266,6 +267,13 @@ EOF
 # ---------------------------------------------------------------------------
 # Step 3 — Deploy UNO Q EchoGlow example to ArduinoApps
 # ---------------------------------------------------------------------------
+# App Lab 0.10+ reorganized the examples catalog: examples no longer live at
+# the root of examples/, they live under board-scoped categories, and App
+# Lab's indexer only scans those category folders. EchoGlow is UNO Q-specific
+# (analog mic + Qwiic), so it belongs under inspirational/platform_unoq/, not
+# the examples/ root — deploying to the root makes the app invisible in App
+# Lab even though the files are on disk.
+# ---------------------------------------------------------------------------
 deploy_example() {
   info "Step 3: Deploying uno-q-echoglow to examples..."
 
@@ -274,7 +282,8 @@ deploy_example() {
   local src="${script_dir}/uno-q-echoglow"
   local examples_dir
   examples_dir="$(_detect_examples_dir)"
-  local dest="${examples_dir}/uno-q-echoglow"
+  local dest="${examples_dir}/inspirational/platform_unoq/uno-q-echoglow"
+  local old_dest="${examples_dir}/uno-q-echoglow"
 
   if [ ! -d "${src}" ]; then
     warn "Example folder not found: ${src}"
@@ -284,6 +293,13 @@ deploy_example() {
 
   if ! id arduino >/dev/null 2>&1; then
     fail "User 'arduino' not found — is this an Arduino UNO Q board?"
+  fi
+
+  # Clean up a stale deploy from a previous version of this script that
+  # copied to the examples/ root (invisible to App Lab's category indexer).
+  if [ -d "${old_dest}" ]; then
+    rm -rf "${old_dest}"
+    ok "Removed stale deployment at ${old_dest}"
   fi
 
   mkdir -p "${dest}"
@@ -387,7 +403,7 @@ verify() {
 
   local examples_dir; examples_dir="$(_detect_examples_dir)"
   check "uno-q-echoglow in examples" \
-    "test -f ${examples_dir}/uno-q-echoglow/app.yaml"
+    "test -f ${examples_dir}/inspirational/platform_unoq/uno-q-echoglow/app.yaml"
 
   echo ""
   if [ "${warn_count}" -eq 0 ]; then
