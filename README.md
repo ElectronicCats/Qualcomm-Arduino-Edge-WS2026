@@ -109,3 +109,18 @@ The Arduino UNO Q uses a **Qualcomm QRB2210 SoC** with a Qualcomm LPASS audio DS
 - `Bridge.provide("warmer_light", warmer_light)` — registers the handler called by the Python side.
 - `warmer_light()` / `cooler_light()` — set the NeoPixel color to warm or cool white.
 - `brighter()` / `dimmer()` — increase or decrease the global brightness by 40%.
+
+### For slow internet speeds:
+##### First
+```
+nohup sh -c '
+docker pull ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
+docker pull ghcr.io/arduino/app-bricks/models-downloader:0.12.0
+docker pull ghcr.io/arduino/app-bricks/ei-models-runner:0.12.1
+' > /tmp/pull.log 2>&1 &
+```
+#### Next
+```
+
+tail -f /tmp/pull.log   # esperar a los 3 "Status: Downloaded"
+```
