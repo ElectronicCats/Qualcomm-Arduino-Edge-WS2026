@@ -131,7 +131,29 @@ preflight_checks() {
     aplay -l 2>/dev/null | grep -q "ArduinoImolaHPH" && break
     sleep 2
   done
-  if ! aplay -l 2>/dev/null | grep -q "ArduinoImolaHPH"; then
+  # Audio driver stuck ("Failed to get clk 'audio'"): restarting the audio
+  # DSP (remoteproc "adsp") makes it re-announce its services and the sound
+  # card appears. Retry a few times before asking for a power cycle.
+  local attempt rp
+  for attempt in 1 2 3; do
+    aplay -l 2>/dev/null | grep -q "ArduinoImolaHPH" && break
+    rp=""
+    for i in /sys/class/remoteproc/remoteproc*; do
+      [ "$(cat "$i/name" 2>/dev/null)" = "adsp" ] && rp="$i"
+    done
+    [ -n "$rp" ] || break
+    warn "Audio codec not detected, restarting the audio DSP (attempt ${attempt}/3)..."
+    echo stop > "$rp/state" 2>/dev/null || true
+    sleep 2
+    echo start > "$rp/state" 2>/dev/null || true
+    for i in $(seq 1 10); do
+      aplay -l 2>/dev/null | grep -q "ArduinoImolaHPH" && break
+      sleep 2
+    done
+  done
+  if aplay -l 2>/dev/null | grep -q "ArduinoImolaHPH"; then
+    :
+  else
     # Check whether the audio driver chain is stuck in deferred probe - a known
     # post-factory-reset state where qcom-sm6115-lpass-lpi-pinctrl can't acquire
     # the 'audio' clock, blocking the whole codec/soundwire/sound stack.
