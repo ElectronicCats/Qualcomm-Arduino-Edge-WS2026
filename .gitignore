@@ -16,3 +16,5 @@ Hardware/QWIIC_LEDs/QWIIC_LEDs-backups/
 *.drl
 
 *.gbrjob
+
+logs/

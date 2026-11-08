@@ -2,125 +2,137 @@
 
 <img src="Software/uno-q-echoglow/assets/docs_assets/EchoGlow.jpeg" alt="drawing" width="250" height="200"/>
 
+The UNO Q EchoGlow is an AI-powered desktop light controlled by voice commands. It detects the keywords "Warmer-light", "Cooler-light", "Dimmer", and "Brighter" through an analog microphone connected directly to the Arduino UNO Q, and controls a NeoPixel strip connected via the onboard Qwiic port. The keyword model is trained on Edge Impulse's platform during the workshop and deployed to the Arduino UNO Q.
 
-The UNO Q EchoGlow is an AI-powered desktop light controlled by voice commands. It detects the keywords "Warmer-light", "Cooler-light", "Dimmer", and "Brighter" through an analog microphone connected directly to the Arduino UNO Q, and controls a NeoPixel strip connected via the onboard Qwiic port. These commands are trained on Edge Impulse’s platform and uploaded to the Arduino UNO Q inside the EchoGlow.
-Be sure to visit the project every now and then to check for updates and downloads:
+This setup uses the analog microphone input of the Arduino UNO Q instead of a USB microphone (unlike the standard keyword-spotting example), so each board needs a one-time configuration before launching the app.
 
-This setup uses the analog microphone input of the Arduino UNO Q instead of a USB microphone (unlike the standard keyword-spotting example), requiring a one-time board configuration before launching the app.
+Project page: [https://hackaday.io/project/205386-arduino-uno-q-echoglow](https://hackaday.io/project/205386-arduino-uno-q-echoglow)
 
-[https://hackaday.io/project/205386-arduino-uno-q-echoglow](https://hackaday.io/project/205386-arduino-uno-q-echoglow)
+## Repository contents
 
-## Bricks Used
+| Path | What it is |
+|---|---|
+| `Software/uno-q-echoglow/` | The Arduino App Lab app (Python + sketch). See its [README](Software/uno-q-echoglow/README.md). |
+| `Software/setup-arduino-q-mic-applab.sh` | Mic setup, runs **on the board** as root. |
+| `Software/prepare-board.sh` | Runs **on a laptop**: applies the mic setup and installs EchoGlow on a board connected over USB. |
+| `Software/golden-image.sh` | Runs **on a Mac**: captures one finished board as a "golden image" and flashes it onto other boards. |
 
-- `keyword_spotting` — detects sound patterns and triggers an event when a keyword is matched.
-
-## Hardware and Software Requirements
+## Hardware
 
 ![Hardware setup](Software/uno-q-echoglow/assets/docs_assets/hardware-setup.jpeg)
 
-### Hardware
+- [Arduino UNO Q](https://store.arduino.cc/products/uno-q)
+- SupplyFrame analog microphone board, connected to the analog mic input
+- SupplyFrame NeoDriver I2C board (address `0x60`) with a NeoPixel strip (up to 5 pixels), connected to the **Qwiic** port
 
-- [Arduino® UNO Q](https://store.arduino.cc/products/uno-q)
-- SupplyFrame analog microphone board (connected to the analog mic input)
-- SupplyFrame NeoDriver I2C board (address `0x60`) with NeoPixel strip, connected to the Qwiic port
+Only connect or disconnect the mic and NeoDriver boards while the UNO Q is powered off.
 
-### Software
+## Tested versions
 
-- Arduino App Lab
-- One-time board setup — see [Setup](#setup) below
+Tested on 2026-11-07:
 
-## Setup
+| Component | Version |
+|---|---|
+| Debian image (official, `arduino-flasher-cli`) | 20260528-558, kernel 7.0.0 |
+| arduino-app-lab (on board) | 0.12.0 |
+| arduino-app-cli | 0.14.1 |
+| arduino-unoq | 0.2.1 |
+| arduino:zephyr core | 0.90.0 and 1.1.0 (sketch builds on both, no core patch needed) |
 
-> **This step is required once per board.** It configures the ALSA audio subsystem, creates the device symlink expected by `arduino-app-cli`, and patches the Docker image to support the analog microphone.
+## Preparing many boards: golden image (recommended)
 
-Clone the repository on the Arduino UNO Q and run the setup script:
+Set up one board completely, copy its storage, and flash that copy onto every other board. Each clone boots already updated, with the mic configured, EchoGlow in My Apps, the Wi-Fi saved and the password set. No App Lab update and no setup script per board.
+
+Requirements on the Mac: [`arduino-flasher-cli`](https://github.com/arduino/arduino-flasher-cli/releases) and the official image extracted in `~/Downloads/unoq-flash/` (`arduino-flasher-cli download unoq`, then extract), `qdl` (`brew install qdl`), `adb` (`brew install --cask android-platform-tools`), about 40 GB free. Close App Lab during all steps.
+
+**Entering EDL (flash) mode:** unplug the board, short the two pins in the rightmost column of the **JCTL** header, `GND` (upper row) and `USB_BOOT` (lower row), with a jumper, then plug the board into the computer directly (no hub). See [Flash a Linux Image](https://docs.arduino.cc/software/app-lab/configure/flash/).
+
+### 1. Make the golden board (once)
+
+1. Flash the official image: `./arduino-flasher-cli flash unoq ./image -y` (board in EDL mode). Unplug, remove the jumper, plug in.
+2. In App Lab: first-time setup (Wi-Fi, password, name) and accept every update it offers.
+3. Close App Lab and run `BOARD_PASSWORD=<password> Software/prepare-board.sh` (mic setup + EchoGlow in My Apps).
+
+### 2. Capture it (once)
 
 ```bash
-sudo git clone https://github.com/ElectronicCats/Qualcomm-Arduino-Edge-WS2026
+BOARD_PASSWORD=<password> Software/golden-image.sh prep   # board booted, on USB: cleans and powers off
+# put the board in EDL mode, then:
+Software/golden-image.sh capture                          # reads efi, rootfs, userdata (~8 min)
+```
+
+The golden image is written to `~/Downloads/unoq-flash/golden/` (about 15 GB).
+
+### 3. Clone every other board
+
+```bash
+Software/golden-image.sh flash                                       # board in EDL mode (~13-15 min)
+# unplug, remove the jumper, plug in, wait ~1 min, then:
+BOARD_PASSWORD=<password> Software/golden-image.sh finish echoglow-01  # unique name + new machine-id
+```
+
+Use a different name for every board: clones start with the golden board's name and machine-id.
+
+Measured: capture 472 s (~31 MB/s); clone flash 777 s and 904 s (rootfs ~21 MB/s, userdata 11-16 MB/s). One flash failed with `USB write failed` while other USB traffic was running; retrying with nothing else on USB worked.
+
+To flash from other computers (Windows, Intel Mac), copy the `golden/` folder together with the matching `arduino-flasher-cli` build and `adb` (exFAT drive, one file is 10.7 GB) and run the same `flash unoq <folder> -y` command.
+
+## Preparing a single board without cloning
+
+1. Connect the board in App Lab, finish its setup and accept the update.
+2. Close App Lab and run:
+
+   ```bash
+   BOARD_PASSWORD=<password> Software/prepare-board.sh
+   ```
+
+   It copies `Software/` to the board, runs `sudo setup-arduino-q-mic-applab.sh --system` and installs EchoGlow under App Lab **My Apps**.
+
+Or directly on the board (terminal on the UNO Q):
+
+```bash
+git clone https://github.com/ElectronicCats/Qualcomm-Arduino-Edge-WS2026
 cd Qualcomm-Arduino-Edge-WS2026
 sudo Software/setup-arduino-q-mic-applab.sh
 ```
 
-After the script completes, **reboot the board**:
+| Command | What it does |
+|---|---|
+| `sudo Software/setup-arduino-q-mic-applab.sh` | Full setup (mic, udev, example, Docker images) + verification |
+| `sudo Software/setup-arduino-q-mic-applab.sh --system` | Same without Docker images |
+| `sudo Software/setup-arduino-q-mic-applab.sh --verify-only` | Checks only, no changes |
+| `sudo Software/setup-arduino-q-mic-applab.sh --deploy-example` | Re-copy the app into the App Lab examples folder |
+| `sudo Software/setup-arduino-q-mic-applab.sh --pull-images` | Only pre-download the Docker images |
+| `sudo Software/setup-arduino-q-mic-applab.sh --patch-zephyr` | Legacy fix for arduino:zephyr 0.55.x (not needed on 0.90.0 / 1.1.0) |
 
-```bash
-sudo reboot
-```
+## What the mic setup does
 
-The script copies this example to `/home/arduino/ArduinoApps/` automatically. If you need to re-deploy it manually:
+The UNO Q microphone codec is part of the Qualcomm QRB2210 SoC, not a USB device, so App Lab's default microphone handling does not find it. The setup script:
 
-```bash
-sudo Software/setup-arduino-q-mic-applab.sh --deploy-example
-```
-#### Notes:
-```
-When running this firmware, only the analog microphone is available (no USB microphone). To revert this, format the UNO Q. 
-```
+1. **ALSA mixer:** installs `mic-uno-q.service`, which applies the 9 mixer controls that route the analog mic at boot. A leftover `/etc/asound.conf` from older versions of this script is backed up and removed.
+2. **Device check:** `arduino-app-cli` only starts apps that need a microphone when `/dev/snd/by-id/` is not empty. The script creates `/dev/snd/by-id/usb-Arduino_Analog_Microphone-00` (pointing to the codec capture device) and a udev rule that recreates it on every boot.
+3. **Example:** copies the app into the App Lab examples folder.
 
-## How to Use the Example
+The app itself handles the rest: the Qualcomm audio DSP and WirePlumber turn the mic routing off whenever a capture session closes, so `python/main.py` re-applies the mixer controls every time it opens the microphone and opens it by explicit name (`plughw:CARD=ArduinoImolaHPH,DEV=2`).
 
-### Hardware Setup
+## Running the app
 
-1. Connect the analog microphone board to the analog mic input of the Arduino UNO Q.
-2. Connect the SupplyFrame NeoDriver I2C board to the **Qwiic port** on the Arduino UNO Q.
-3. Connect a NeoPixel strip to the NeoDriver (up to 5 pixels supported out of the box).
-
-
-### Launch the App
-
-1. Open **Arduino App Lab** and connect to the board using **Network Mode**.
-2. Open this example and click the **Play** button in the top right corner.
-3. Wait for the app to launch.
-
-
-4. Say one of the voice commands into the microphone.
+1. Open **Arduino App Lab** and connect to the board.
+2. Open **UNO Q EchoGlow** from **My Apps** and click **Play**. (App Lab's Examples screen only lists apps from its own index, so a copy placed in the examples folder may not appear there.)
+3. Deploy the keyword model trained in the workshop. The `keyword_spotting` brick's default model only detects "Hey Arduino", which this app does not react to.
+4. Say one of the commands:
 
 | Keyword | Action |
 |---|---|
-| **Warmer-light** | Sets NeoPixel color to warm white (RGB 255, 194, 138) |
-| **Cooler-light** | Sets NeoPixel color to cool white (RGB 144, 213, 255) |
-| **Brighter** | Increases brightness by 40% |
-| **Dimmer** | Decreases brightness by 40% |
+| **Warmer-light** | NeoPixels to warm white (RGB 255, 194, 138) |
+| **Cooler-light** | NeoPixels to cool white (RGB 144, 213, 255) |
+| **Brighter** | Brightness up 40% |
+| **Dimmer** | Brightness down 40% |
 
-### How it Works
+## Troubleshooting
 
-The `keyword_spotting` Brick continuously monitors the analog microphone input. When a keyword is detected, it calls the microcontroller via the Bridge, which adjusts the NeoPixel strip accordingly. The NeoPixel starts at neutral white (RGB 255, 255, 255) at boot.
-
-
-#### Why a setup script is needed
-
-The Arduino UNO Q uses a **Qualcomm QRB2210 SoC** with a Qualcomm LPASS audio DSP (Q6ASM). This DSP resets all ALSA mixer controls to `off` every time an audio capture session closes. The setup script:
-
-- Configures the ALSA mixer and installs a systemd service that re-applies the configuration at boot.
-- Creates the `/dev/snd/by-id` device symlink expected by `arduino-app-cli` to detect the microphone.
-- Patches the Docker image used by `arduino-app-cli` so that its Python `Microphone` class re-runs the mixer setup before opening each PCM session, and uses the full ALSA device name (`plughw:CARD=ArduinoImolaHPH,DEV=2`) required inside containers.
-
-### Understanding the Code
-
-**Python side (`python/main.py`):**
-
-- `spotter = KeywordSpotting()` — initializes the audio listener on the analog mic input.
-- `spotter.on_detect("Warmer-light", ...)` — registers a callback for each keyword.
-- `Bridge.call("warmer_light")` — notifies the microcontroller which keyword was detected.
-
-**Microcontroller side (`sketch/sketch.ino`):**
-
-- `seesaw_NeoPixel strip(..., &Wire1)` — the NeoDriver is on `Wire1`, which maps to the Qwiic port on the UNO Q.
-- `Bridge.provide("warmer_light", warmer_light)` — registers the handler called by the Python side.
-- `warmer_light()` / `cooler_light()` — set the NeoPixel color to warm or cool white.
-- `brighter()` / `dimmer()` — increase or decrease the global brightness by 40%.
-
-### For slow internet speeds:
-##### First
-```
-nohup sh -c '
-docker pull ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
-docker pull ghcr.io/arduino/app-bricks/models-downloader:0.12.0
-docker pull ghcr.io/arduino/app-bricks/ei-models-runner:0.12.1
-' > /tmp/pull.log 2>&1 &
-```
-#### Next
-```
-
-tail -f /tmp/pull.log   # esperar a los 3 "Status: Downloaded"
-```
+- **`ArduinoImolaHPH codec not detected` / `no microphone device found`:** after a factory reset or an abrupt power loss the audio driver can stay stuck (`dmesg`: `Failed to get clk 'audio'`, `deferred probe pending`); a reboot does not fix it. Unplug power, wait 5 seconds, plug back in.
+- **Sketch fails to link (`undefined reference`) after a board reset during a build:** the interrupted build left empty object files in the app cache. Run `arduino-app-cli app clean-cache uno-q-echoglow`.
+- **Commands over `adb shell` fail with `stat /data/local/tmp` or `Some indexes could not be updated.`:** adb sets `TMPDIR=/data/local/tmp`, which does not exist on the board. Run `export TMPDIR=/tmp` first. App Lab itself is not affected.
+- **Flasher waits forever on `Waiting for EDL device`:** the jumper was not in place when the board was plugged in, or App Lab / adb is holding the USB device. Quit App Lab, run `adb kill-server`, re-plug with the jumper.
+- **Wi-Fi with a captive portal** (registration page): the board cannot complete it by itself; use a network without a portal.
