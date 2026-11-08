@@ -2,17 +2,15 @@
 
 <img src="Software/uno-q-echoglow/assets/docs_assets/EchoGlow.jpeg" alt="drawing" width="250" height="200"/>
 
+The UNO Q EchoGlow is an AI-powered desktop light controlled by voice commands. It detects the keywords "Warmer-light", "Cooler-light", "Dimmer", and "Brighter" through an analog microphone connected directly to the Arduino UNO Q, and controls a NeoPixel strip connected via the onboard Qwiic port. The keyword model is trained on Edge Impulse's platform during the workshop and deployed to the Arduino UNO Q.
 
-The UNO Q EchoGlow is an AI-powered desktop light controlled by voice commands. It detects the keywords "Warmer-light", "Cooler-light", "Dimmer", and "Brighter" through an analog microphone connected directly to the Arduino UNO Q, and controls a NeoPixel strip connected via the onboard Qwiic port. These commands are trained on Edge Impulse’s platform and uploaded to the Arduino UNO Q inside the EchoGlow.
-Be sure to visit the project every now and then to check for updates and downloads:
+This setup uses the analog microphone input of the Arduino UNO Q instead of a USB microphone (unlike the standard keyword-spotting example), so the board needs a one-time configuration before launching the app.
 
-This setup uses the analog microphone input of the Arduino UNO Q instead of a USB microphone (unlike the standard keyword-spotting example), requiring a one-time board configuration before launching the app.
-
-[https://hackaday.io/project/205386-arduino-uno-q-echoglow](https://hackaday.io/project/205386-arduino-uno-q-echoglow)
+Project page: [https://hackaday.io/project/205386-arduino-uno-q-echoglow](https://hackaday.io/project/205386-arduino-uno-q-echoglow)
 
 ## Bricks Used
 
-- `keyword_spotting` — detects sound patterns and triggers an event when a keyword is matched.
+- `keyword_spotting`: detects sound patterns and triggers an event when a keyword is matched.
 
 ## Hardware and Software Requirements
 
@@ -20,42 +18,35 @@ This setup uses the analog microphone input of the Arduino UNO Q instead of a US
 
 ### Hardware
 
-- [Arduino® UNO Q](https://store.arduino.cc/products/uno-q)
-- SupplyFrame analog microphone board (connected to the analog mic input)
-- SupplyFrame NeoDriver I2C board (address `0x60`) with NeoPixel strip, connected to the Qwiic port
+- [Arduino UNO Q](https://store.arduino.cc/products/uno-q)
+- SupplyFrame analog microphone board, connected to the analog mic input
+- SupplyFrame NeoDriver I2C board (address `0x60`) with a NeoPixel strip (up to 5 pixels), connected to the **Qwiic** port
+
+Connect or disconnect the mic and NeoDriver boards only while the UNO Q is powered off.
 
 ### Software
 
-- Arduino App Lab
-- One-time board setup — see [Setup](#setup) below
+- Arduino App Lab (tested with App Lab 0.12.0 on the board, arduino-app-cli 0.14.1)
+- One-time board setup, see [Setup](#setup) below
 
 ## Setup
 
-> **This step is required once per board.** It configures the ALSA audio subsystem, creates the device symlink expected by `arduino-app-cli`, and patches the Docker image to support the analog microphone.
+> **Workshop boards are already set up.** Do this only on your own board.
 
-Clone the repository on the Arduino UNO Q and run the setup script:
+> **Required once per board.** It configures the analog microphone (ALSA mixer service, the `/dev/snd/by-id` entry that App Lab needs to start an app with a microphone) and installs EchoGlow in App Lab **My Apps**.
 
-```bash
-sudo git clone https://github.com/ElectronicCats/Qualcomm-Arduino-Edge-WS2026
-cd Qualcomm-Arduino-Edge-WS2026
-sudo Software/setup-arduino-q-mic-applab.sh
-```
+1. Connect the board in Arduino App Lab, finish its first-time setup and accept any update it offers.
+2. Open a terminal on the UNO Q and run:
 
-After the script completes, **reboot the board**:
+   ```bash
+   git clone https://github.com/ElectronicCats/Qualcomm-Arduino-Edge-WS2026
+   cd Qualcomm-Arduino-Edge-WS2026
+   sudo Software/setup-arduino-q-mic-applab.sh
+   ```
 
-```bash
-sudo reboot
-```
+The script ends with a list of checks and exits with 0 only when all of them pass. To re-check later: `sudo Software/setup-arduino-q-mic-applab.sh --verify-only`. Running it again re-installs EchoGlow in My Apps (changes made to that copy are replaced).
 
-The script copies this example to `/home/arduino/ArduinoApps/` automatically. If you need to re-deploy it manually:
-
-```bash
-sudo Software/setup-arduino-q-mic-applab.sh --deploy-example
-```
-#### Notes:
-```
-When running this firmware, only the analog microphone is available (no USB microphone). To revert this, format the UNO Q. 
-```
+> **Note:** with this setup only the analog microphone is used by the app (no USB microphone). To fully revert, reflash the UNO Q.
 
 ## How to Use the Example
 
@@ -65,15 +56,15 @@ When running this firmware, only the analog microphone is available (no USB micr
 2. Connect the SupplyFrame NeoDriver I2C board to the **Qwiic port** on the Arduino UNO Q.
 3. Connect a NeoPixel strip to the NeoDriver (up to 5 pixels supported out of the box).
 
-
 ### Launch the App
 
-1. Open **Arduino App Lab** and connect to the board using **Network Mode**.
-2. Open this example and click the **Play** button in the top right corner.
-3. Wait for the app to launch.
+1. Open **Arduino App Lab** and connect to the board.
+2. Open **UNO Q EchoGlow** from **My Apps**.
+3. Add the keyword model you trained in Edge Impulse during the workshop. The brick's default model only detects "Hey Arduino", which this app does not react to.
+4. Click the **Play** button in the top right corner and wait for the app to launch.
+5. Say one of the voice commands into the microphone.
 
-
-4. Say one of the voice commands into the microphone.
+### Voice Commands
 
 | Keyword | Action |
 |---|---|
@@ -84,43 +75,14 @@ When running this firmware, only the analog microphone is available (no USB micr
 
 ### How it Works
 
-The `keyword_spotting` Brick continuously monitors the analog microphone input. When a keyword is detected, it calls the microcontroller via the Bridge, which adjusts the NeoPixel strip accordingly. The NeoPixel starts at neutral white (RGB 255, 255, 255) at boot.
+The `keyword_spotting` Brick continuously monitors the analog microphone input. When a keyword is detected, it calls the microcontroller via the Bridge, which adjusts the NeoPixel strip and plays a heart animation on the LED matrix. The NeoPixel starts at neutral white (RGB 255, 255, 255) at boot.
 
+The UNO Q microphone codec is part of the Qualcomm QRB2210 SoC, not a USB device, so App Lab's default microphone handling does not find it. The setup script installs `mic-uno-q.service` (applies the mic mixer controls at boot) and a `/dev/snd/by-id/usb-Arduino_Analog_Microphone-00` entry with a udev rule so App Lab accepts the codec. The Qualcomm audio DSP turns the mic routing off whenever a capture session closes, so `python/main.py` re-applies the mixer controls every time it opens the microphone and opens it by explicit name (`plughw:CARD=ArduinoImolaHPH,DEV=2`).
 
-#### Why a setup script is needed
+See the [app README](Software/uno-q-echoglow/README.md) for the code walkthrough.
 
-The Arduino UNO Q uses a **Qualcomm QRB2210 SoC** with a Qualcomm LPASS audio DSP (Q6ASM). This DSP resets all ALSA mixer controls to `off` every time an audio capture session closes. The setup script:
+## Troubleshooting
 
-- Configures the ALSA mixer and installs a systemd service that re-applies the configuration at boot.
-- Creates the `/dev/snd/by-id` device symlink expected by `arduino-app-cli` to detect the microphone.
-- Patches the Docker image used by `arduino-app-cli` so that its Python `Microphone` class re-runs the mixer setup before opening each PCM session, and uses the full ALSA device name (`plughw:CARD=ArduinoImolaHPH,DEV=2`) required inside containers.
-
-### Understanding the Code
-
-**Python side (`python/main.py`):**
-
-- `spotter = KeywordSpotting()` — initializes the audio listener on the analog mic input.
-- `spotter.on_detect("Warmer-light", ...)` — registers a callback for each keyword.
-- `Bridge.call("warmer_light")` — notifies the microcontroller which keyword was detected.
-
-**Microcontroller side (`sketch/sketch.ino`):**
-
-- `seesaw_NeoPixel strip(..., &Wire1)` — the NeoDriver is on `Wire1`, which maps to the Qwiic port on the UNO Q.
-- `Bridge.provide("warmer_light", warmer_light)` — registers the handler called by the Python side.
-- `warmer_light()` / `cooler_light()` — set the NeoPixel color to warm or cool white.
-- `brighter()` / `dimmer()` — increase or decrease the global brightness by 40%.
-
-### For slow internet speeds:
-##### First
-```
-nohup sh -c '
-docker pull ghcr.io/arduino/app-bricks/python-apps-base:0.12.0
-docker pull ghcr.io/arduino/app-bricks/models-downloader:0.12.0
-docker pull ghcr.io/arduino/app-bricks/ei-models-runner:0.12.1
-' > /tmp/pull.log 2>&1 &
-```
-#### Next
-```
-
-tail -f /tmp/pull.log   # esperar a los 3 "Status: Downloaded"
-```
+- **`ArduinoImolaHPH codec not detected` or `no microphone device found`:** the audio driver can get stuck after a factory reset or an abrupt power loss; a reboot does not fix it. Unplug power, wait 5 seconds, plug back in.
+- **The sketch fails to build with `undefined reference` after the board lost power during a build:** clear the app's build cache from a terminal on the board: `arduino-app-cli app clean-cache uno-q-echoglow`, then press Play again.
+- **EchoGlow does not appear in App Lab:** look under **My Apps**, not Examples. If it is missing, run `sudo Software/setup-arduino-q-mic-applab.sh --deploy-example`.
